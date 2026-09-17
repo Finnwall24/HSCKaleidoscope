@@ -1,13 +1,25 @@
 // Shared storage for Kaleidoscope's events (photos, tags, dates). Backed by
-// Vercel KV, so every visitor to the site reads and writes the same data --
-// there's no per-user account, so anyone with the site URL can see and add
-// photos.
-import { kv } from '@vercel/kv';
+// Vercel Blob, so every visitor to the site reads and writes the same data
+// -- there's no per-user account, so anyone with the site URL can see and
+// add photos. The whole events array is stored as one JSON file, always at
+// the same path, so every save overwrites the previous one.
+import { put, list } from '@vercel/blob';
+
+const EVENTS_PATH = 'events.json';
+
+async function readEvents() {
+  const { blobs } = await list({ prefix: EVENTS_PATH, limit: 1 });
+  if (!blobs.length) return [];
+  const res = await fetch(blobs[0].url, { cache: 'no-store' });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    const data = await kv.get('events');
-    res.status(200).json(data || []);
+    const data = await readEvents();
+    res.status(200).json(data);
     return;
   }
 
@@ -18,22 +30,21 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Safety net: refuse to silently replace real, existing data with an
-    // empty list. In practice this only happens by accident -- a client
-    // whose own initial load failed, still holding an empty in-memory list,
-    // saving that over everyone's real photos. A deliberate "delete my last
-    // event" from a client that loaded successfully passes confirmClear to
-    // get past this on purpose.
     const confirmClear = req.query.confirmClear === 'true';
     if (body.length === 0 && !confirmClear) {
-      const existing = await kv.get('events');
-      if (Array.isArray(existing) && existing.length > 0) {
+      const existing = await readEvents();
+      if (existing.length > 0) {
         res.status(409).json({ error: 'Refusing to overwrite existing non-empty data with an empty list. Pass ?confirmClear=true if this is intentional.' });
         return;
       }
     }
 
-    await kv.set('events', body);
+    await put(EVENTS_PATH, JSON.stringify(body), {
+      access: 'public',
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: 'application/json',
+    });
     res.status(200).json({ ok: true });
     return;
   }
