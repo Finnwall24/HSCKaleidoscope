@@ -202,20 +202,6 @@ body.has-bottombar #main{ padding-bottom:90px; }
 }
 @keyframes spin{ to{ transform:rotate(360deg); } }
 
-#loadErrorBanner{
-  position:fixed;top:0;left:0;right:0;z-index:600;
-  background:var(--re);color:#fff;text-align:center;
-  font-family:'Fraunces',Georgia,serif;font-size:12.5px;font-weight:600;
-  padding:10px 16px calc(10px + env(safe-area-inset-top));
-}
-#loadErrorBanner[hidden]{ display:none; }
-#loadErrorBanner button{
-  margin-left:10px;border:1px solid rgba(255,255,255,0.6);background:transparent;
-  color:#fff;font-family:inherit;font-size:inherit;font-weight:inherit;
-  padding:2px 10px;border-radius:20px;
-}
-#loadErrorBanner button:active{ background:rgba(255,255,255,0.2); }
-
 /* ---------- LIGHTBOX (full screen on mobile) ---------- */
 .lightbox{
   position:fixed;inset:0;background:var(--n9);
@@ -415,11 +401,6 @@ body.has-bottombar #main{ padding-bottom:90px; }
 
 <div id="busyToast" hidden><span class="spinner"></span>Adding photos</div>
 
-<div id="loadErrorBanner" hidden>
-  <span id="loadErrorText">Couldn't load the shared photos. Don't add anything yet, or you risk losing what's already saved.</span>
-  <button id="loadRetryBtn" type="button">Retry</button>
-</div>
-
 <!-- Lives outside #bottombar deliberately: #bottombar is display:none while
      viewing an event's detail page, and a <label for> cannot activate a
      file input trapped inside a display:none ancestor -- the grid's own
@@ -547,41 +528,11 @@ async function loadState(retries = 3){
     }
     if(attempt < retries) await new Promise(r => setTimeout(r, 1000));
   }
-  showLoadFailureBanner();
-}
-
-function showLoadFailureBanner(){
-  const el = document.getElementById('loadErrorBanner');
-  const textEl = document.getElementById('loadErrorText');
-  if(textEl){
-    // On a local file there's no server to connect to at all, so there's
-    // nothing at risk of being overwritten -- that warning only matters on
-    // a real deployment where shared photos might actually exist.
-    textEl.textContent = (location.protocol === 'file:')
-      ? "This is a local file, so it can't reach the shared photo library. Deploy it to Netlify to use the real shared version."
-      : "Couldn't load the shared photos. Don't add anything yet, or you risk losing what's already saved.";
-  }
-  if(el) el.hidden = false;
-}
-
-function hideLoadFailureBanner(){
-  const el = document.getElementById('loadErrorBanner');
-  if(el) el.hidden = true;
-}
-
-const loadRetryBtn = document.getElementById('loadRetryBtn');
-if(loadRetryBtn){
-  loadRetryBtn.addEventListener('click', async () => {
-    loadRetryBtn.disabled = true;
-    loadRetryBtn.textContent = 'Retrying...';
-    await loadState();
-    if(hasLoadedOnce){
-      hideLoadFailureBanner();
-      render();
-    }
-    loadRetryBtn.disabled = false;
-    loadRetryBtn.textContent = 'Retry';
-  });
+  // No banner shown to the user by design -- but saveState() still checks
+  // hasLoadedOnce and silently refuses to save until a load succeeds, so a
+  // failed load here can never overwrite real shared photos. Reloading the
+  // page is what retries the load.
+  console.warn('Could not load the shared photo library after retries.');
 }
 
 const prefersReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
