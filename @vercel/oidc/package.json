@@ -1,0 +1,5 @@
+{
+  "name": "@vercel/oidc",
+  "version": "3.8.8",
+  "main": "./index.js"
+}
