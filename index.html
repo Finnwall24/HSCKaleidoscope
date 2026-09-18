@@ -1,0 +1,1411 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>H-SC Kaleidoscope</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&display=swap');
+
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+button{ touch-action:manipulation; }
+@keyframes itemIn{ from{ opacity:0;transform:translateY(6px); } to{ opacity:1;transform:translateY(0); } }
+@keyframes fadeIn{ from{ opacity:0; } to{ opacity:1; } }
+@keyframes pinPop{
+  from{ transform:translate(-50%,-50%) scale(0); opacity:0; }
+  to{ transform:translate(-50%,-50%) scale(1); opacity:1; }
+}
+@media (prefers-reduced-motion: reduce){
+  *{ animation-duration:0.001ms !important; animation-delay:0s !important; transition-duration:0.001ms !important; }
+}
+::view-transition-old(root), ::view-transition-new(root){ animation-duration:0.22s; }
+:root{
+  --bg:#f1efed;--surf:#fff;--surf2:#f6f4f2;--surf3:#e8e4e1;
+  --n9:#1c0a0d;--n8:#331216;--n7:#551a20;--n6:#742129;--n5:#8f2830;
+  --n4:#ab3d45;--n3:#c06970;--n2:#dda9ac;--n1:#eed3d4;--n0:#f8ecec;
+  --am:#b45309;--amb:#fef3c7;--re:#b91c1c;--reb:#fee2e2;
+  --tx:#211d1c;--tx2:#4b4442;--tx3:#726a67;--tx4:#a69e9a;
+  --bd:rgba(33,29,28,.10);--bd2:rgba(33,29,28,.05);
+  --sh:0 1px 3px rgba(20,16,15,.08),0 1px 2px rgba(20,16,15,.05);
+  --sh2:0 4px 18px rgba(20,16,15,.12),0 1px 4px rgba(20,16,15,.06);
+}
+body{
+  background:var(--bg);color:var(--tx);
+  font-family:'Fraunces',Georgia,serif;
+  font-size:13px;line-height:1.5;
+  height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--n3);border-radius:2px;}
+
+/* ---------- TOPBAR ---------- */
+#top{
+  background:linear-gradient(120deg,var(--n9) 0%,var(--n8) 65%,#130507 100%);
+  padding:14px 18px 12px;
+  display:flex;align-items:flex-end;gap:12px;
+  flex-shrink:0;
+  padding-top:calc(14px + env(safe-area-inset-top));
+}
+#top .titles{flex:1;min-width:0;}
+#top h1{
+  color:#fff;font-size:22px;font-weight:700;letter-spacing:-.01em;
+}
+#top .sub{color:var(--n2);font-size:12px;margin-top:2px;}
+#top .count{
+  text-align:right;flex-shrink:0;
+}
+#top .count b{
+  display:block;font-variant-numeric:tabular-nums;
+  color:#fff;font-size:19px;font-weight:600;line-height:1.1;
+}
+#top .count span{color:var(--n2);font-size:11px;}
+
+/* ---------- MAIN SCROLL ---------- */
+#main{flex:1;overflow-y:auto;padding:10px 0 20px;-webkit-overflow-scrolling:touch;}
+body.has-bottombar #main{ padding-bottom:90px; }
+
+.empty{
+  text-align:center;padding:40px 20px 20px;color:var(--tx3);
+  animation:fadeIn 0.35s ease;
+}
+.empty h3{font-size:17px;font-weight:700;color:var(--tx);margin-bottom:6px;}
+.empty p{font-size:13px;color:var(--tx3);max-width:28ch;margin:0 auto;}
+
+/* ---------- EVENT LIST (home) ---------- */
+.event-row{
+  display:flex;align-items:center;gap:12px;width:100%;
+  padding:10px 14px;background:none;border:none;border-bottom:1px solid var(--bd2);
+  text-align:left;cursor:pointer;touch-action:manipulation;font:inherit;color:inherit;
+  transition:background-color 0.15s ease,transform 0.15s ease;
+  animation:itemIn 0.3s ease backwards;
+  animation-delay:calc(min(var(--i, 0),10) * 30ms);
+}
+.event-row:active{ background:var(--surf2);transform:scale(0.99); }
+.event-row .cover{
+  width:58px;height:58px;border-radius:10px;overflow:hidden;flex-shrink:0;background:#ddd8d4;
+}
+.event-row .cover img{width:100%;height:100%;object-fit:cover;display:block;-webkit-touch-callout:none;}
+.event-row .info{flex:1;min-width:0;}
+.event-row .title{
+  font-size:16px;font-weight:700;color:var(--tx);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.event-row .meta{
+  font-size:11.5px;color:var(--tx3);
+  margin-top:2px;font-variant-numeric:tabular-nums;
+}
+.event-row .chev{color:var(--tx4);font-size:15px;flex-shrink:0;}
+.year-label{
+  padding:14px 14px 4px;font-size:12px;
+  color:var(--tx4);font-variant-numeric:tabular-nums;
+  animation:fadeIn 0.35s ease;
+}
+.year-label:first-child{ padding-top:4px; }
+
+/* ---------- EVENT DETAIL ---------- */
+.detail-header{
+  display:flex;align-items:flex-start;gap:10px;
+  padding:12px 14px;border-bottom:1px solid var(--bd2);
+  flex-shrink:0;
+  animation:fadeIn 0.3s ease;
+}
+.detail-header[hidden]{ display:none; }
+.detail-header .info{flex:1;min-width:0;}
+.icon-btn{
+  background:var(--surf2);border:1px solid var(--bd);color:var(--tx2);
+  width:36px;height:36px;border-radius:10px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:16px;
+  cursor:pointer;touch-action:manipulation;
+  transition:background-color 0.15s ease,transform 0.15s ease;
+}
+.icon-btn:active{ background:var(--surf3);transform:scale(0.92); }
+.event-title{
+  font-family:'Fraunces',Georgia,serif;font-size:17px;font-weight:700;color:var(--tx);
+  background:transparent;border:none;width:100%;padding:1px 0;
+  border-bottom:1px solid transparent;
+}
+.event-title:focus{ outline:none; border-bottom-color:var(--n4); }
+.event-meta{
+  font-size:11.5px;color:var(--tx3);font-variant-numeric:tabular-nums;
+  margin-top:3px;
+}
+
+.grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:2px;
+  background:var(--surf3);
+}
+.frame{
+  position:relative;aspect-ratio:1/1;overflow:hidden;background:#ddd8d4;
+  display:block;width:100%;border:none;padding:0;font:inherit;cursor:pointer;
+  touch-action:manipulation;transition:transform 0.15s ease;
+  animation:itemIn 0.3s ease backwards;
+  animation-delay:calc(min(var(--i, 0),12) * 25ms);
+}
+.frame:active{ transform:scale(0.95); }
+.frame img{width:100%;height:100%;object-fit:cover;display:block;-webkit-touch-callout:none;}
+.frame .tagpip{
+  position:absolute;bottom:4px;left:4px;right:4px;
+  display:flex;gap:2px;flex-wrap:wrap;
+}
+.frame .tagpip span{
+  background:rgba(28,10,13,0.72);color:#fff;
+  font-family:'Fraunces',Georgia,serif;font-size:10px;
+  padding:1.5px 6px;border-radius:6px;
+}
+.frame.add-frame{
+  background:var(--surf2);border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--tx3);padding:0;
+}
+.frame.add-frame:active{ background:var(--surf3); }
+.frame.add-frame .plus{ font-size:26px;font-weight:300;line-height:1;font-family:'Fraunces',Georgia,serif; }
+
+/* ---------- BOTTOM UPLOAD BAR ---------- */
+#bottombar{
+  position:fixed;left:0;right:0;bottom:0;
+  padding:12px 16px calc(12px + env(safe-area-inset-bottom));
+  background:linear-gradient(0deg, var(--bg) 55%, rgba(241,239,237,0));
+  display:flex;justify-content:center;
+  z-index:60;
+}
+#bottombar[hidden]{ display:none; }
+#addBtn{
+  width:100%;max-width:420px;cursor:pointer;user-select:none;
+  background:var(--n6);
+  color:#fff;border:none;border-radius:10px;
+  padding:14px 18px;font-family:'Fraunces',Georgia,serif;
+  font-size:15px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 6px 20px rgba(85,26,32,0.35);
+  touch-action:manipulation;
+}
+#addBtn .plus{ font-size:18px;font-weight:400;line-height:1; }
+#addBtn:active{ transform:scale(0.98); }
+#fileInput{
+  position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+  overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;opacity:0;
+}
+
+#busyToast{
+  position:fixed;top:calc(12px + env(safe-area-inset-top));left:50%;
+  transform:translateX(-50%);
+  background:var(--n8);color:#fff;padding:10px 18px;border-radius:20px;
+  font-family:'Fraunces',Georgia,serif;font-size:13px;font-weight:600;
+  display:flex;align-items:center;gap:9px;z-index:500;
+  box-shadow:0 4px 16px rgba(0,0,0,0.3);
+  animation:fadeIn 0.2s ease;
+}
+#busyToast[hidden]{ display:none; }
+#busyToast .spinner{
+  width:14px;height:14px;border-radius:50%;flex-shrink:0;
+  border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;
+  animation:spin 0.7s linear infinite;
+}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+/* ---------- LIGHTBOX (full screen on mobile) ---------- */
+.lightbox{
+  position:fixed;inset:0;background:var(--n9);
+  display:flex;flex-direction:column;z-index:200;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.25s ease;
+}
+.lightbox.open{ opacity:1;pointer-events:auto; }
+.lb-top{
+  display:flex;align-items:center;gap:10px;
+  padding:calc(12px + env(safe-area-inset-top)) 14px 10px;
+  flex-shrink:0;
+}
+.lb-top .txt{ flex:1;min-width:0; }
+.lb-top h4{ font-family:'Fraunces',Georgia,serif;color:#fff;font-size:16px;font-weight:700; }
+.lb-top .date{ color:var(--n2);font-size:11px;font-variant-numeric:tabular-nums;margin-top:1px; }
+.lb-close{
+  background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.16);
+  color:#fff;width:40px;height:40px;border-radius:10px;font-size:17px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:transform 0.15s ease,background-color 0.15s ease;
+}
+.lb-close:active{ background:rgba(255,255,255,0.2);transform:scale(0.92); }
+.lb-image-wrap{
+  flex:1;position:relative;display:flex;align-items:center;justify-content:center;
+  min-height:0;overflow:hidden;
+}
+.lb-image-wrap img{
+  max-width:100%;max-height:100%;display:block;user-select:none;-webkit-user-drag:none;
+  -webkit-touch-callout:none;touch-action:manipulation;
+}
+.lb-image-box{
+  position:absolute;pointer-events:none;
+}
+.lb-image-box .tagpin{ pointer-events:auto; }
+.lb-hint{
+  position:absolute;bottom:10px;left:50%;transform:translateX(-50%);
+  background:rgba(28,10,13,0.6);color:var(--n1);font-size:11px;
+  padding:6px 12px;border-radius:10px;white-space:nowrap;
+  pointer-events:none;
+}
+.lb-nav{
+  position:absolute;top:50%;transform:translateY(-50%);
+  background:rgba(28,10,13,0.45);border:1px solid rgba(255,255,255,0.15);
+  color:#fff;width:44px;height:44px;border-radius:50%;font-size:17px;
+  display:flex;align-items:center;justify-content:center;
+  transition:transform 0.15s ease,background-color 0.15s ease;
+}
+.lb-nav:active{ background:rgba(28,10,13,0.65);transform:translateY(-50%) scale(0.92); }
+.lb-nav.prev{ left:8px; } .lb-nav.next{ right:8px; }
+
+.tagpin{
+  position:absolute;width:16px;height:16px;
+  border:2px solid #fff;border-radius:50%;
+  transform:translate(-50%,-50%);
+  box-shadow:0 0 0 2px rgba(0,0,0,0.35);
+  animation:pinPop 0.25s cubic-bezier(.34,1.56,.64,1);
+}
+.tagpin.pending{ border-color:var(--am); }
+.tagpin::after{
+  content:attr(data-name);
+  position:absolute;top:20px;left:50%;transform:translateX(-50%);
+  background:rgba(28,10,13,0.85);color:#fff;
+  font-family:'Fraunces',Georgia,serif;font-size:11px;
+  padding:2px 7px;border-radius:6px;white-space:nowrap;
+}
+.tagpin .rm{
+  position:absolute;top:-30px;left:50%;transform:translateX(-50%);
+  background:var(--re);color:#fff;width:22px;height:22px;border-radius:50%;
+  font-size:13px;line-height:22px;text-align:center;
+}
+
+.lb-sheet{
+  background:var(--surf);border-radius:20px 20px 0 0;
+  padding:22px 16px calc(16px + env(safe-area-inset-bottom));
+  flex-shrink:0;max-height:44vh;overflow-y:auto;position:relative;
+}
+.lb-sheet::before, .modal::before{
+  content:'';position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:36px;height:4px;border-radius:2px;background:var(--bd);
+}
+.lb-sheet h5{
+  font-size:12.5px;font-weight:400;
+  color:var(--tx3);margin-bottom:10px;
+}
+.pending-tag{
+  display:none;flex-direction:column;gap:8px;
+  border:1px solid var(--am);background:var(--amb);
+  border-radius:10px;padding:10px;margin-bottom:12px;
+}
+.pending-tag.show{ display:flex; }
+.pending-tag input{
+  background:#fff;border:1px solid var(--bd);color:var(--tx);
+  padding:10px 12px;font-family:'Fraunces',Georgia,serif;font-size:14px;
+  border-radius:10px;
+}
+.pending-tag input:focus{ outline:none;border-color:var(--n5); }
+.pending-tag .row{ display:flex;gap:8px; }
+.btn{
+  border:none;padding:10px 14px;font-family:'Fraunces',Georgia,serif;
+  font-size:13.5px;font-weight:700;border-radius:10px;flex:1;
+  cursor:pointer;touch-action:manipulation;transition:transform 0.15s ease;
+}
+.btn:active{ transform:scale(0.97); }
+.btn-primary{ background:var(--n6);color:#fff; }
+.btn-ghost{ background:transparent;color:var(--tx3);border:1px solid var(--bd); }
+.taglist{ display:flex;flex-direction:column;gap:7px; }
+.tagrow{
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surf2);padding:8px 12px;border-radius:10px;font-size:14px;
+}
+.tagrow{ animation:itemIn 0.2s ease backwards; }
+.tagrow .tagyear{ color:var(--tx3);font-size:12px;margin-left:6px; }
+.tagrow button{
+  background:none;border:none;color:var(--tx3);font-size:17px;
+  width:32px;height:32px;flex-shrink:0;cursor:pointer;
+  transition:transform 0.15s ease;
+}
+.tagrow button:active{ transform:scale(0.9); }
+.hint{ font-size:12.5px;color:var(--tx3); }
+
+/* ---------- BATCH MODAL ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(28,10,13,0.55);
+  display:flex;align-items:flex-end;justify-content:center;z-index:300;
+  opacity:0;pointer-events:none;
+  transition:opacity 0.25s ease;
+}
+.modal-backdrop.open{ opacity:1;pointer-events:auto; }
+.modal-backdrop .modal{ transition:transform 0.25s ease; transform:translateY(16px); }
+.modal-backdrop.open .modal{ transform:translateY(0); }
+.modal{
+  background:var(--surf);width:100%;max-width:480px;position:relative;
+  border-radius:20px 20px 0 0;padding:24px 18px calc(20px + env(safe-area-inset-bottom));
+}
+.modal h3{ font-family:'Fraunces',Georgia,serif;font-size:19px;font-weight:700;color:var(--tx);margin-bottom:3px; }
+.modal p.hint{ margin-bottom:16px; }
+.modal-suggest{
+  display:flex;flex-direction:column;gap:8px;
+  background:var(--surf2);border:1px solid var(--bd);border-radius:10px;
+  padding:10px 12px;margin:-6px 0 16px;
+}
+.modal-suggest[hidden]{ display:none; }
+.modal-suggest p{ font-size:13px;color:var(--tx2);margin:0; }
+.modal-suggest p b{ color:var(--tx); }
+.modal-suggest .btn{ flex:none; }
+.modal label{
+  font-size:12px;
+  color:var(--tx3);display:block;margin-bottom:5px;
+}
+.modal input[type=text], .modal input[type=date]{
+  width:100%;padding:11px 12px;border:1px solid var(--bd);border-radius:10px;
+  font-family:'Fraunces',Georgia,serif;font-size:15px;margin-bottom:14px;
+  background:var(--surf2);color:var(--tx);
+}
+.modal .row2{ display:flex;gap:10px; }
+.modal .row2 > div{ flex:1; }
+.modal .actions{ display:flex;gap:10px;margin-top:4px; }
+
+@media (min-width:640px){
+  #main{ padding-left:24px;padding-right:24px; }
+  .detail-header{ padding-left:0;padding-right:0; }
+  .event-row{ padding-left:0;padding-right:0;border-radius:10px; }
+  .grid{ grid-template-columns:repeat(4,1fr); }
+}
+}
+</style>
+
+<div id="top">
+  <div class="titles">
+    <h1>H-SC Kaleidoscope</h1>
+    <div class="sub">Events &amp; tags</div>
+  </div>
+  <div class="count">
+    <b id="frameCount">0</b>
+    <span>photos</span>
+  </div>
+</div>
+
+<div class="detail-header" id="detailHeader" hidden>
+  <button class="icon-btn" id="backBtn" title="Back to all events">&#8592;</button>
+  <div class="info">
+    <input class="event-title" id="detailTitleInput">
+    <div class="event-meta" id="detailMeta"></div>
+  </div>
+  <button class="icon-btn" id="detailDownloadBtn" title="Download all photos and info">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M12 4v11"/><path d="M7.5 11l4.5 4.5 4.5-4.5"/><path d="M5 20h14"/></svg>
+  </button>
+  <button class="icon-btn" id="detailDelBtn" title="Remove this event">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M4 7h16"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M10 11v6M14 11v6"/></svg>
+  </button>
+</div>
+
+<div id="main">
+  <div class="empty" id="emptyState">
+    <h3>No events yet</h3>
+    <p>Add photos below. They're grouped into an event and named from the dates.</p>
+  </div>
+</div>
+
+<div id="busyToast" hidden><span class="spinner"></span><span id="busyText">Adding photos</span></div>
+
+<!-- Lives outside #bottombar deliberately: #bottombar is display:none while
+     viewing an event's detail page, and a <label for> cannot activate a
+     file input trapped inside a display:none ancestor -- the grid's own
+     + tile (which targets this same input) would silently do nothing. -->
+<input type="file" id="fileInput" accept="image/*" multiple>
+
+<div id="bottombar">
+  <label id="addBtn" for="fileInput" role="button" tabindex="0">
+    <span class="plus">+</span>
+    Add photos
+  </label>
+</div>
+
+<!-- lightbox -->
+<div class="lightbox" id="lightbox">
+  <div class="lb-top">
+    <div class="txt">
+      <h4 id="lbEventTitle">Event</h4>
+      <div class="date" id="lbDate"></div>
+    </div>
+    <button class="lb-close" id="lbDeletePhoto" title="Remove this photo">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="17" height="17"><path d="M4 7h16"/><path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M10 11v6M14 11v6"/></svg>
+    </button>
+    <button class="lb-close" id="lbClose">&times;</button>
+  </div>
+  <div class="lb-image-wrap" id="lbImageWrap">
+    <img id="lbImage" src="" alt="">
+    <div class="lb-image-box" id="lbImageBox"></div>
+    <button class="lb-nav prev" id="lbPrev">&#8592;</button>
+    <button class="lb-nav next" id="lbNext">&#8594;</button>
+    <div class="lb-hint">Tap the photo to tag someone</div>
+  </div>
+  <div class="lb-sheet">
+    <div class="pending-tag" id="pendingTag">
+      <input type="text" id="pendingName" placeholder="Who is this?" maxlength="30" autocomplete="off">
+      <input type="text" id="pendingClassYear" placeholder="Class year (optional)" maxlength="4" inputmode="numeric" autocomplete="off">
+      <div class="row">
+        <button class="btn btn-primary" id="pendingSave">Tag</button>
+        <button class="btn btn-ghost" id="pendingCancel">Cancel</button>
+      </div>
+    </div>
+    <h5>Tagged in this photo</h5>
+    <div class="taglist" id="taglist"></div>
+  </div>
+</div>
+
+<!-- batch date modal -->
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal">
+    <h3>Name this event</h3>
+    <p class="hint">We guessed a date range from your photos. Adjust it and the title updates.</p>
+    <div class="modal-suggest" id="modalSuggest" hidden>
+      <p></p>
+      <button class="btn btn-ghost" id="modalUseExisting" type="button">Add to this event instead</button>
+    </div>
+    <div class="row2">
+      <div>
+        <label for="modalStart">Start</label>
+        <input type="date" id="modalStart">
+      </div>
+      <div>
+        <label for="modalEnd">End</label>
+        <input type="date" id="modalEnd">
+      </div>
+    </div>
+    <label for="modalTitle">Event title</label>
+    <input type="text" id="modalTitle">
+    <div class="actions">
+      <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+      <button class="btn btn-primary" id="modalConfirm">Create event</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Events (titles, dates, tags, and each photo's URL) are persisted
+// server-side via a Vercel serverless function backed by Vercel Blob -- so
+// everyone who opens this site sees the same shared photos, not just
+// whoever uploaded them, and they stay there across visits/devices. See
+// api/events.js. Each photo itself is uploaded separately as its own blob
+// (see api/upload.js and uploadPhoto() below) so this shared JSON document
+// only ever holds small text fields and URLs, never image data -- keeping
+// it tiny no matter how many photos accumulate.
+const API_URL = '/api/events';
+const UPLOAD_URL = '/api/upload';
+
+// Whether this page has successfully fetched the real shared state at least
+// once. saveState() refuses to run until this is true -- otherwise, if the
+// very first load happened to fail (a network blip, a cold start, loading
+// mid-deploy), render()'s save-on-every-render would immediately overwrite
+// everyone's real photos with this page's still-empty in-memory list. That
+// is a real incident this app hit once already; this flag is the fix.
+let hasLoadedOnce = false;
+
+async function saveState(){
+  if(!hasLoadedOnce){
+    console.warn('Skipping save: have not successfully loaded the shared state yet.');
+    return;
+  }
+  try{
+    // confirmClear tells the server this empty (or non-empty) list is the
+    // real, deliberate state -- safe to send on every save, since saveState
+    // never runs before a successful load establishes a trustworthy baseline.
+    const url = events.length === 0 ? API_URL + '?confirmClear=true' : API_URL;
+    const res = await withTimeout(fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(events)
+    }), 10000, 'save');
+    if(!res.ok) throw new Error('save failed: ' + res.status);
+  }catch(err){
+    console.warn('Could not save photo log (is the Vercel function deployed?):', err);
+  }
+}
+
+async function loadState(retries = 3){
+  for(let attempt = 1; attempt <= retries; attempt++){
+    try{
+      const res = await withTimeout(fetch(API_URL), 10000, 'load');
+      if(res.ok){
+        const data = await res.json();
+        if(Array.isArray(data)){
+          events = data;
+          hasLoadedOnce = true;
+          return;
+        }
+      }
+    }catch(err){
+      console.warn(`loadState attempt ${attempt}/${retries} failed:`, err);
+    }
+    if(attempt < retries) await new Promise(r => setTimeout(r, 1000));
+  }
+  // No banner shown to the user by design -- but saveState() still checks
+  // hasLoadedOnce and silently refuses to save until a load succeeds, so a
+  // failed load here can never overwrite real shared photos. Reloading the
+  // page is what retries the load.
+  console.warn('Could not load the shared photo library after retries.');
+}
+
+const prefersReducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+function withViewTransition(fn){
+  if(!prefersReducedMotion && document.startViewTransition){
+    const t = document.startViewTransition(fn);
+    // A transition rejects its promises if a newer one interrupts it
+    // before it finishes (e.g. rapid taps) -- that's expected, not an error.
+    [t.ready, t.updateCallbackDone, t.finished].forEach(p => p.catch(() => {}));
+  } else {
+    fn();
+  }
+}
+
+let events = [];
+let pendingFiles = null;
+let addToEventId = null;
+let openEventId = null;
+let currentLightbox = { eventId: null, photoIndex: 0 };
+let pendingPin = null;
+
+const fileInput = document.getElementById('fileInput');
+const main = document.getElementById('main');
+const emptyState = document.getElementById('emptyState');
+const frameCountEl = document.getElementById('frameCount');
+const detailHeader = document.getElementById('detailHeader');
+const detailTitleInput = document.getElementById('detailTitleInput');
+const detailMeta = document.getElementById('detailMeta');
+const addBtnLabel = document.getElementById('addBtn');
+const bottombar = document.getElementById('bottombar');
+const busyToast = document.getElementById('busyToast');
+
+const busyText = document.getElementById('busyText');
+
+function setAddBusy(isBusy, label){
+  busyText.textContent = label || 'Adding photos';
+  busyToast.hidden = !isBusy;
+}
+
+fileInput.addEventListener('change', e => handleFiles(e.target.files));
+
+// The bottom bar only appears on the events list, so it always starts a
+// brand new event; adding to an event you already have open happens via
+// the + tile at the end of its photo grid instead.
+addBtnLabel.addEventListener('click', () => {
+  addToEventId = null;
+});
+
+document.getElementById('backBtn').addEventListener('click', () => {
+  withViewTransition(() => {
+    openEventId = null;
+    render();
+  });
+});
+
+document.getElementById('detailDelBtn').addEventListener('click', () => {
+  const ev = events.find(e => e.id === openEventId);
+  if(!ev) return;
+  if(confirm('Remove this event and its photos?')){
+    withViewTransition(() => {
+      events = events.filter(e => e.id !== ev.id);
+      openEventId = null;
+      render();
+    });
+  }
+});
+
+detailTitleInput.addEventListener('change', () => {
+  const ev = events.find(e => e.id === openEventId);
+  if(!ev) return;
+  ev.title = detailTitleInput.value.trim() || 'Untitled event';
+  detailTitleInput.value = ev.title;
+  if(currentLightbox.eventId === ev.id){
+    lbEventTitle.textContent = ev.title;
+  }
+  saveState();
+});
+
+function handleFiles(fileList){
+  // Some mobile photo pickers hand back files with an empty/missing MIME
+  // type (e.g. iCloud photos still downloading). Only reject a file when
+  // we positively know it isn't an image; the type doesn't have to be
+  // set, since accept="image/*" already gatekeeps at the OS level.
+  const files = Array.from(fileList).filter(f => !f.type || f.type.startsWith('image/'));
+  fileInput.value = '';
+  if(!files.length) return;
+  if(addToEventId){
+    const targetId = addToEventId;
+    addToEventId = null;
+    appendPhotosToEvent(targetId, files);
+    return;
+  }
+  pendingFiles = files;
+  openBatchModal(files);
+}
+
+async function appendPhotosToEvent(eventId, files){
+  const ev = events.find(e => e.id === eventId);
+  if(!ev) return;
+  const startIdx = ev.photos.length;
+  let photos;
+  setAddBusy(true);
+  try{
+    photos = await processPhotos(files);
+  }catch(err){
+    console.warn('Could not read photos:', err);
+    alert("Sorry, one of those photos couldn't be read. Please try again.");
+    return;
+  }finally{
+    setAddBusy(false);
+  }
+  photos.forEach((src, i) => {
+    ev.photos.push({ id: 'ph_' + Date.now() + '_' + i, src, tags: [] });
+  });
+  openEventId = eventId;
+  render();
+  openLightbox(eventId, startIdx);
+}
+
+// ---------------- batch date modal ----------------
+const modalBackdrop = document.getElementById('modalBackdrop');
+const modalStart = document.getElementById('modalStart');
+const modalEnd = document.getElementById('modalEnd');
+const modalTitle = document.getElementById('modalTitle');
+const modalSuggest = document.getElementById('modalSuggest');
+const modalUseExisting = document.getElementById('modalUseExisting');
+
+function toDateInput(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function guessDates(files){
+  const dates = files.map(f => new Date(f.lastModified || Date.now()));
+  dates.sort((a,b) => a-b);
+  return { start: dates[0], end: dates[dates.length-1] };
+}
+
+function titleFromDates(startStr, endStr){
+  const s = new Date(startStr + 'T00:00:00');
+  const e = new Date(endStr + 'T00:00:00');
+  const opts = { month: 'long', day: 'numeric' };
+  const sStr = s.toLocaleDateString(undefined, opts);
+  const eStr = e.toLocaleDateString(undefined, opts);
+  const sameYear = s.getFullYear() === e.getFullYear();
+  const yearStr = e.getFullYear();
+  if(s.toDateString() === e.toDateString()) return `${sStr}, ${yearStr}`;
+  if(s.getMonth() === e.getMonth() && sameYear){
+    return `${s.toLocaleDateString(undefined,{month:'long'})} ${s.getDate()} to ${e.getDate()}, ${yearStr}`;
+  }
+  return `${sStr} to ${eStr}, ${yearStr}`;
+}
+
+// Finds an existing event whose date range is the same as, or within a
+// couple of days of, the given range. Prevents photos from the same trip
+// or day from getting split into a duplicate event by accident.
+function findNearbyEvent(startStr, endStr){
+  const startMs = new Date(startStr + 'T00:00:00').getTime();
+  const endMs = new Date(endStr + 'T00:00:00').getTime();
+  const THRESHOLD_MS = 2 * 24 * 60 * 60 * 1000;
+  let best = null;
+  let bestDist = Infinity;
+  events.forEach(ev => {
+    const evStartMs = new Date(ev.start + 'T00:00:00').getTime();
+    const evEndMs = new Date(ev.end + 'T00:00:00').getTime();
+    const dist = Math.max(0, startMs - evEndMs, evStartMs - endMs);
+    if(dist <= THRESHOLD_MS && dist < bestDist){
+      best = ev;
+      bestDist = dist;
+    }
+  });
+  return best;
+}
+
+function openBatchModal(files){
+  const { start, end } = guessDates(files);
+  modalStart.value = toDateInput(start);
+  modalEnd.value = toDateInput(end);
+  modalTitle.value = titleFromDates(modalStart.value, modalEnd.value);
+
+  const nearby = findNearbyEvent(modalStart.value, modalEnd.value);
+  if(nearby){
+    modalSuggest.hidden = false;
+    modalSuggest.querySelector('p').innerHTML =
+      `These look like they might belong to <b>${escapeHtml(nearby.title)}</b> (${escapeHtml(eventDateLabel(nearby))}).`;
+    modalUseExisting.onclick = () => {
+      withViewTransition(() => modalBackdrop.classList.remove('open'));
+      const filesToAdd = pendingFiles;
+      pendingFiles = null;
+      appendPhotosToEvent(nearby.id, filesToAdd);
+    };
+  } else {
+    modalSuggest.hidden = true;
+    modalUseExisting.onclick = null;
+  }
+
+  withViewTransition(() => modalBackdrop.classList.add('open'));
+}
+
+[modalStart, modalEnd].forEach(el => el.addEventListener('change', () => {
+  if(modalStart.value && modalEnd.value){
+    modalTitle.value = titleFromDates(modalStart.value, modalEnd.value);
+  }
+}));
+
+document.getElementById('modalCancel').addEventListener('click', () => {
+  withViewTransition(() => modalBackdrop.classList.remove('open'));
+  pendingFiles = null;
+});
+
+modalBackdrop.addEventListener('click', (e) => {
+  if(e.target !== modalBackdrop) return;
+  withViewTransition(() => modalBackdrop.classList.remove('open'));
+  pendingFiles = null;
+});
+
+document.getElementById('modalConfirm').addEventListener('click', async () => {
+  if(!pendingFiles) return;
+  const title = modalTitle.value.trim() || 'Untitled event';
+  const start = modalStart.value;
+  const end = modalEnd.value;
+  withViewTransition(() => modalBackdrop.classList.remove('open'));
+
+  let photos;
+  setAddBusy(true);
+  try{
+    photos = await processPhotos(pendingFiles);
+  }catch(err){
+    console.warn('Could not read photos:', err);
+    alert("Sorry, one of those photos couldn't be read. Please try again.");
+    pendingFiles = null;
+    return;
+  }finally{
+    setAddBusy(false);
+  }
+  const newEvent = {
+    id: 'ev_' + Date.now(),
+    title, start, end,
+    photos: photos.map((src, i) => ({ id: 'ph_' + Date.now() + '_' + i, src, tags: [] }))
+  };
+  events.unshift(newEvent);
+  pendingFiles = null;
+  openEventId = newEvent.id;
+  render();
+  openLightbox(newEvent.id, 0);
+});
+
+function readFileAsDataUrl(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('Could not read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+function loadImage(src){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error('Could not decode image'));
+    img.src = src;
+  });
+}
+
+function canvasDownscale(source, width, height, max){
+  const scale = max / Math.max(width, height);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(width * scale);
+  canvas.height = Math.round(height * scale);
+  canvas.getContext('2d').drawImage(source, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL('image/jpeg', 0.85);
+}
+
+// Downscales large phone-camera photos before storing them, so imports
+// don't stall on multi-MB originals and IndexedDB doesn't fill up fast.
+// Prefers createImageBitmap, which decodes straight from the file without
+// ever holding a full-resolution image as a giant base64 string in memory
+// first -- on mobile Safari, the old decode-full-size-then-shrink approach
+// could exhaust memory and lock up the tab on modern high-megapixel photos.
+// Falls back to the classic Image+canvas approach (and, if even that fails,
+// the untouched original) for browsers without createImageBitmap support.
+// Some WebKit versions are known to occasionally hang (never resolve or
+// reject) on createImageBitmap/Image decode for certain photos, rather than
+// failing cleanly -- this guarantees we always move on instead of hanging
+// the whole import forever.
+function withTimeout(promise, ms, label){
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error((label || 'operation') + ' timed out')), ms);
+    Promise.resolve(promise).then(
+      v => { clearTimeout(timer); resolve(v); },
+      err => { clearTimeout(timer); reject(err); }
+    );
+  });
+}
+
+async function processPhoto(file){
+  const MAX = 1600;
+  if('createImageBitmap' in window){
+    try{
+      const bitmap = await withTimeout(createImageBitmap(file), 8000, 'decode');
+      const { width, height } = bitmap;
+      const needsScale = width > MAX || height > MAX;
+      const result = needsScale ? canvasDownscale(bitmap, width, height, MAX) : null;
+      bitmap.close();
+      if(result) return result;
+      return await withTimeout(readFileAsDataUrl(file), 8000, 'read');
+    }catch(err){
+      console.warn('createImageBitmap failed, falling back:', err);
+    }
+  }
+  try{
+    const dataUrl = await withTimeout(readFileAsDataUrl(file), 8000, 'read');
+    try{
+      const img = await withTimeout(loadImage(dataUrl), 8000, 'decode');
+      if(img.width <= MAX && img.height <= MAX) return dataUrl;
+      return canvasDownscale(img, img.width, img.height, MAX);
+    }catch(err){
+      console.warn('Could not downscale photo, using original:', err);
+      return dataUrl;
+    }
+  }catch(err){
+    console.warn('Could not read photo:', err);
+    throw err;
+  }
+}
+
+// Uploads one already-downscaled photo (as a data URL) to its own blob and
+// returns the resulting URL, which is what actually gets stored in an
+// event's photo list -- never the data URL itself.
+async function uploadPhoto(dataUrl){
+  const res = await withTimeout(fetch(UPLOAD_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ dataUrl })
+  }), 20000, 'upload');
+  if(!res.ok) throw new Error('upload failed: ' + res.status);
+  const data = await res.json();
+  return data.url;
+}
+
+// Processed one at a time (not Promise.all) so a batch of several full-size
+// phone photos doesn't try to decode them all in memory simultaneously, and
+// so uploads don't all hit the server at once either.
+async function processPhotos(files){
+  const results = [];
+  for(const file of files){
+    const dataUrl = await processPhoto(file);
+    results.push(await uploadPhoto(dataUrl));
+  }
+  return results;
+}
+
+// ---------------- download an event ----------------
+// Bundles an event's photos, exactly as uploaded and with nothing drawn on
+// them, into one ZIP alongside an info.txt listing the event details and who
+// is tagged in each photo. The ZIP is built right here in the page (photos
+// are stored uncompressed since JPEG/PNG are already compressed), so no
+// server work or extra library is needed.
+const CRC_TABLE = (() => {
+  const table = new Uint32Array(256);
+  for(let n = 0; n < 256; n++){
+    let c = n;
+    for(let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    table[n] = c >>> 0;
+  }
+  return table;
+})();
+
+function crc32(bytes){
+  let c = 0xFFFFFFFF;
+  for(let i = 0; i < bytes.length; i++) c = CRC_TABLE[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function buildZip(files){
+  const encoder = new TextEncoder();
+  const parts = [];
+  const directory = [];
+  const now = new Date();
+  const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+  const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+  let offset = 0;
+
+  files.forEach(file => {
+    const nameBytes = encoder.encode(file.name);
+    const crc = crc32(file.data);
+    const size = file.data.length;
+
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034b50, true);
+    local.setUint16(4, 20, true);
+    local.setUint16(6, 0x0800, true);
+    local.setUint16(8, 0, true);
+    local.setUint16(10, dosTime, true);
+    local.setUint16(12, dosDate, true);
+    local.setUint32(14, crc, true);
+    local.setUint32(18, size, true);
+    local.setUint32(22, size, true);
+    local.setUint16(26, nameBytes.length, true);
+    local.setUint16(28, 0, true);
+    parts.push(new Uint8Array(local.buffer), nameBytes, file.data);
+
+    const entry = new DataView(new ArrayBuffer(46));
+    entry.setUint32(0, 0x02014b50, true);
+    entry.setUint16(4, 20, true);
+    entry.setUint16(6, 20, true);
+    entry.setUint16(8, 0x0800, true);
+    entry.setUint16(10, 0, true);
+    entry.setUint16(12, dosTime, true);
+    entry.setUint16(14, dosDate, true);
+    entry.setUint32(16, crc, true);
+    entry.setUint32(20, size, true);
+    entry.setUint32(24, size, true);
+    entry.setUint16(28, nameBytes.length, true);
+    entry.setUint32(42, offset, true);
+    directory.push(new Uint8Array(entry.buffer), nameBytes);
+
+    offset += 30 + nameBytes.length + size;
+  });
+
+  const directorySize = directory.reduce((sum, chunk) => sum + chunk.length, 0);
+  const end = new DataView(new ArrayBuffer(22));
+  end.setUint32(0, 0x06054b50, true);
+  end.setUint16(8, files.length, true);
+  end.setUint16(10, files.length, true);
+  end.setUint32(12, directorySize, true);
+  end.setUint32(16, offset, true);
+
+  return new Blob([...parts, ...directory, new Uint8Array(end.buffer)], { type: 'application/zip' });
+}
+
+async function fetchPhotoBytes(src){
+  const res = await withTimeout(fetch(src), 30000, 'download');
+  if(!res.ok) throw new Error('photo fetch failed: ' + res.status);
+  const blob = await res.blob();
+  return { data: new Uint8Array(await blob.arrayBuffer()), type: blob.type };
+}
+
+function extensionForType(type){
+  const subtype = (type || '').split('/')[1] || 'jpeg';
+  if(subtype === 'jpeg') return 'jpg';
+  return subtype.replace(/[^a-z0-9]/gi, '') || 'jpg';
+}
+
+function tagPositionLabel(tag){
+  const across = tag.x < 33 ? 'left' : (tag.x > 66 ? 'right' : 'center');
+  const down = tag.y < 33 ? 'upper' : (tag.y > 66 ? 'lower' : 'middle');
+  if(across === 'center' && down === 'middle') return 'center';
+  if(across === 'center') return down + ' center';
+  if(down === 'middle') return across + ' side';
+  return down + ' ' + across;
+}
+
+function describeTag(tag){
+  const year = tag.classYear ? ', Class of ' + tag.classYear : '';
+  return `${tag.name}${year} (${tagPositionLabel(tag)} of photo)`;
+}
+
+function safeFileName(name){
+  return (name || 'event').replace(/[\\/:*?"<>|]/g, '-').trim() || 'event';
+}
+
+function saveBlobAs(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+// Photos are fetched one at a time so a big event never holds more than it
+// has to in memory at once while the download is being put together.
+async function downloadEvent(ev){
+  const total = ev.photos.length;
+  if(!total) return;
+  const digits = Math.max(2, String(total).length);
+  const files = [];
+  const info = [ev.title, eventDateLabel(ev), `${total} photo${total === 1 ? '' : 's'}`, ''];
+
+  try{
+    for(let i = 0; i < total; i++){
+      setAddBusy(true, `Preparing ${i + 1} of ${total}`);
+      const ph = ev.photos[i];
+      const { data, type } = await fetchPhotoBytes(ph.src);
+      const name = String(i + 1).padStart(digits, '0') + '.' + extensionForType(type);
+      files.push({ name, data });
+      info.push(name);
+      if(ph.tags.length){
+        info.push('People tagged:');
+        ph.tags.forEach(t => info.push('- ' + describeTag(t)));
+      } else {
+        info.push('No one tagged.');
+      }
+      info.push('');
+    }
+    files.unshift({ name: 'info.txt', data: new TextEncoder().encode(info.join('\r\n')) });
+    saveBlobAs(buildZip(files), safeFileName(ev.title) + '.zip');
+  }catch(err){
+    console.warn('Could not prepare download:', err);
+    alert("Sorry, that download couldn't be prepared. Please try again.");
+  }finally{
+    setAddBusy(false);
+  }
+}
+
+document.getElementById('detailDownloadBtn').addEventListener('click', () => {
+  const ev = events.find(e => e.id === openEventId);
+  if(ev) downloadEvent(ev);
+});
+
+// ---------------- render ----------------
+function formatDateRange(startStr, endStr){
+  const s = new Date(startStr + 'T00:00:00');
+  const e = new Date(endStr + 'T00:00:00');
+  if(isNaN(s) || isNaN(e)) return startStr === endStr ? startStr : `${startStr} to ${endStr}`;
+  const shortOpts = { month: 'short', day: 'numeric' };
+  const sStr = s.toLocaleDateString(undefined, shortOpts);
+  const eStr = e.toLocaleDateString(undefined, shortOpts);
+  const sameYear = s.getFullYear() === e.getFullYear();
+  const yearStr = e.getFullYear();
+  if(s.toDateString() === e.toDateString()) return `${sStr}, ${yearStr}`;
+  if(s.getMonth() === e.getMonth() && sameYear){
+    return `${s.toLocaleDateString(undefined,{month:'short'})} ${s.getDate()} to ${e.getDate()}, ${yearStr}`;
+  }
+  if(sameYear) return `${sStr} to ${eStr}, ${yearStr}`;
+  return `${sStr}, ${s.getFullYear()} to ${eStr}, ${yearStr}`;
+}
+
+function eventDateLabel(ev){
+  return formatDateRange(ev.start, ev.end);
+}
+
+function render(){
+  saveState();
+  const totalPhotos = events.reduce((sum, ev) => sum + ev.photos.length, 0);
+  frameCountEl.textContent = totalPhotos;
+
+  if(openEventId && !events.some(e => e.id === openEventId)){
+    openEventId = null;
+  }
+
+  const openEvent = openEventId ? events.find(e => e.id === openEventId) : null;
+  bottombar.hidden = !!openEvent;
+  document.body.classList.toggle('has-bottombar', !openEvent);
+  if(openEvent){
+    renderDetail(openEvent);
+  } else {
+    renderHomeList();
+  }
+}
+
+function renderHomeList(){
+  detailHeader.hidden = true;
+  emptyState.style.display = events.length ? 'none' : 'block';
+
+  main.querySelectorAll('.event-row, .year-label, .grid').forEach(n => n.remove());
+
+  let lastYear = null;
+  events.forEach((ev, i) => {
+    const year = (ev.start || '').slice(0, 4);
+    if(year && year !== lastYear){
+      const yearLabel = document.createElement('div');
+      yearLabel.className = 'year-label';
+      yearLabel.textContent = year;
+      main.appendChild(yearLabel);
+      lastYear = year;
+    }
+
+    const row = document.createElement('button');
+    row.type = 'button';
+    row.className = 'event-row';
+    row.style.setProperty('--i', i);
+    const cover = ev.photos[0];
+    row.innerHTML = `
+      <div class="cover">${cover ? `<img src="${cover.src}" loading="lazy">` : ''}</div>
+      <div class="info">
+        <div class="title">${escapeHtml(ev.title)}</div>
+        <div class="meta">${eventDateLabel(ev)} · ${ev.photos.length} photo${ev.photos.length===1?'':'s'}</div>
+      </div>
+      <span class="chev">&#8594;</span>
+    `;
+    row.addEventListener('click', () => { withViewTransition(() => { openEventId = ev.id; render(); }); });
+    main.appendChild(row);
+  });
+}
+
+function renderDetail(ev){
+  emptyState.style.display = 'none';
+  main.querySelectorAll('.event-row, .year-label').forEach(n => n.remove());
+
+  detailHeader.hidden = false;
+  detailTitleInput.value = ev.title;
+  detailMeta.textContent = `${eventDateLabel(ev)} · ${ev.photos.length} photo${ev.photos.length===1?'':'s'}`;
+
+  let grid = main.querySelector('.grid');
+  if(!grid){
+    grid = document.createElement('div');
+    grid.className = 'grid';
+    main.appendChild(grid);
+  }
+  grid.innerHTML = '';
+
+  ev.photos.forEach((ph, idx) => {
+    const frame = document.createElement('button');
+    frame.className = 'frame';
+    frame.type = 'button';
+    frame.style.setProperty('--i', idx);
+    const tagPips = ph.tags.length
+      ? `<div class="tagpip">${ph.tags.slice(0,2).map(t => `<span>${escapeHtml(t.name)}</span>`).join('')}${ph.tags.length>2 ? `<span>+${ph.tags.length-2}</span>`:''}</div>`
+      : '';
+    frame.innerHTML = `<img src="${ph.src}" loading="lazy">${tagPips}`;
+    frame.addEventListener('click', () => openLightbox(ev.id, idx));
+    grid.appendChild(frame);
+  });
+
+  const addTile = document.createElement('label');
+  addTile.className = 'frame add-frame';
+  addTile.style.setProperty('--i', ev.photos.length);
+  addTile.htmlFor = 'fileInput';
+  addTile.setAttribute('role', 'button');
+  addTile.tabIndex = 0;
+  addTile.title = 'Add photos to this event';
+  addTile.innerHTML = `<span class="plus">+</span>`;
+  addTile.addEventListener('click', () => {
+    addToEventId = ev.id;
+  });
+  grid.appendChild(addTile);
+}
+
+function escapeHtml(s){
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s){ return escapeHtml(s); }
+
+// ---------------- lightbox ----------------
+const lightbox = document.getElementById('lightbox');
+const lbImage = document.getElementById('lbImage');
+const lbImageWrap = document.getElementById('lbImageWrap');
+const lbImageBox = document.getElementById('lbImageBox');
+const lbEventTitle = document.getElementById('lbEventTitle');
+const lbDate = document.getElementById('lbDate');
+const taglist = document.getElementById('taglist');
+const pendingTag = document.getElementById('pendingTag');
+const pendingName = document.getElementById('pendingName');
+const pendingClassYear = document.getElementById('pendingClassYear');
+
+// Accepts "27" or "2027" and normalizes to a 4-digit year string; returns
+// '' for anything that isn't 2 or 4 digits (silently ignored elsewhere).
+function normalizeClassYear(raw){
+  const digits = String(raw || '').trim();
+  if(/^\d{2}$/.test(digits)) return '20' + digits;
+  if(/^\d{4}$/.test(digits)) return digits;
+  return '';
+}
+
+function currentEvent(){ return events.find(e => e.id === currentLightbox.eventId); }
+function currentPhoto(){ const ev = currentEvent(); return ev ? ev.photos[currentLightbox.photoIndex] : null; }
+
+function openLightbox(eventId, photoIndex){
+  withViewTransition(() => {
+    currentLightbox = { eventId, photoIndex };
+    lightbox.classList.add('open');
+    renderLightbox();
+  });
+}
+
+function syncImageBox(){
+  const wrapRect = lbImageWrap.getBoundingClientRect();
+  const imgRect = lbImage.getBoundingClientRect();
+  lbImageBox.style.left = (imgRect.left - wrapRect.left) + 'px';
+  lbImageBox.style.top = (imgRect.top - wrapRect.top) + 'px';
+  lbImageBox.style.width = imgRect.width + 'px';
+  lbImageBox.style.height = imgRect.height + 'px';
+}
+lbImage.addEventListener('load', syncImageBox);
+window.addEventListener('resize', syncImageBox);
+new ResizeObserver(syncImageBox).observe(lbImageWrap);
+
+function renderLightbox(){
+  const ev = currentEvent();
+  const ph = currentPhoto();
+  if(!ev || !ph) return;
+  lbImage.src = ph.src;
+  lbEventTitle.textContent = ev.title;
+  lbDate.textContent = eventDateLabel(ev);
+  cancelPending();
+  syncImageBox();
+  renderPins();
+  renderTaglist();
+}
+
+function renderPins(){
+  lbImageBox.querySelectorAll('.tagpin').forEach(p => p.remove());
+  const ph = currentPhoto();
+  ph.tags.forEach((t, i) => {
+    const pin = document.createElement('div');
+    pin.className = 'tagpin';
+    pin.style.left = t.x + '%';
+    pin.style.top = t.y + '%';
+    pin.dataset.name = t.classYear ? `${t.name} '${t.classYear.slice(-2)}` : t.name;
+    pin.innerHTML = `<span class="rm" data-idx="${i}">&times;</span>`;
+    pin.querySelector('.rm').addEventListener('click', (e) => {
+      e.stopPropagation();
+      ph.tags.splice(i, 1);
+      renderPins();
+      renderTaglist();
+      render();
+    });
+    lbImageBox.appendChild(pin);
+  });
+}
+
+function renderTaglist(){
+  const ph = currentPhoto();
+  taglist.innerHTML = '';
+  if(!ph.tags.length){
+    taglist.innerHTML = `<p class="hint">No one tagged yet.</p>`;
+    return;
+  }
+  ph.tags.forEach((t, i) => {
+    const row = document.createElement('div');
+    row.className = 'tagrow';
+    const yearHtml = t.classYear ? `<span class="tagyear">Class of ${escapeHtml(t.classYear)}</span>` : '';
+    row.innerHTML = `<span>${escapeHtml(t.name)}${yearHtml}</span><button data-idx="${i}">&times;</button>`;
+    row.querySelector('button').addEventListener('click', () => {
+      ph.tags.splice(i, 1);
+      renderPins();
+      renderTaglist();
+      render();
+    });
+    taglist.appendChild(row);
+  });
+}
+
+// Swipe left/right between photos and swipe down to dismiss, like a real
+// phone photo viewer -- a plain tap still falls through to tagging below.
+let touchStartX = 0, touchStartY = 0, isSwipeGesture = false, suppressNextClick = false;
+const SWIPE_THRESHOLD = 50;
+
+lbImageWrap.addEventListener('touchstart', (e) => {
+  if(e.touches.length !== 1) return;
+  touchStartX = e.touches[0].clientX;
+  touchStartY = e.touches[0].clientY;
+  isSwipeGesture = false;
+  suppressNextClick = false;
+}, { passive: true });
+
+lbImageWrap.addEventListener('touchmove', (e) => {
+  if(e.touches.length !== 1) return;
+  const dx = e.touches[0].clientX - touchStartX;
+  const dy = e.touches[0].clientY - touchStartY;
+  if(Math.abs(dx) > 10 || Math.abs(dy) > 10) isSwipeGesture = true;
+}, { passive: true });
+
+lbImageWrap.addEventListener('touchend', (e) => {
+  if(!isSwipeGesture || pendingTag.classList.contains('show')) return;
+  const dx = e.changedTouches[0].clientX - touchStartX;
+  const dy = e.changedTouches[0].clientY - touchStartY;
+  const absDx = Math.abs(dx), absDy = Math.abs(dy);
+  if(absDx > absDy && absDx > SWIPE_THRESHOLD){
+    navigate(dx < 0 ? 1 : -1);
+    suppressNextClick = true;
+  } else if(dy > SWIPE_THRESHOLD && absDy > absDx){
+    withViewTransition(() => lightbox.classList.remove('open'));
+    suppressNextClick = true;
+  }
+});
+
+lbImageWrap.addEventListener('click', (e) => {
+  if(suppressNextClick){ suppressNextClick = false; return; }
+  if(e.target.closest('.tagpin') || e.target.closest('.lb-nav')) return;
+  const imgRect = lbImage.getBoundingClientRect();
+  if(e.clientX < imgRect.left || e.clientX > imgRect.right || e.clientY < imgRect.top || e.clientY > imgRect.bottom) return;
+  const x = ((e.clientX - imgRect.left) / imgRect.width) * 100;
+  const y = ((e.clientY - imgRect.top) / imgRect.height) * 100;
+  pendingPin = { x, y };
+  showPending(x, y);
+});
+
+function showPending(x, y){
+  pendingTag.classList.add('show');
+  pendingName.value = '';
+  pendingClassYear.value = '';
+  pendingName.focus();
+  let marker = lbImageBox.querySelector('.pending-marker');
+  if(!marker){
+    marker = document.createElement('div');
+    marker.className = 'tagpin pending pending-marker';
+    lbImageBox.appendChild(marker);
+  }
+  marker.style.left = x + '%';
+  marker.style.top = y + '%';
+}
+
+function cancelPending(){
+  pendingPin = null;
+  pendingTag.classList.remove('show');
+  const marker = lbImageBox.querySelector('.pending-marker');
+  if(marker) marker.remove();
+}
+
+document.getElementById('pendingCancel').addEventListener('click', cancelPending);
+document.getElementById('pendingSave').addEventListener('click', savePendingTag);
+pendingName.addEventListener('keydown', (e) => { if(e.key === 'Enter') savePendingTag(); });
+pendingClassYear.addEventListener('keydown', (e) => { if(e.key === 'Enter') savePendingTag(); });
+
+function savePendingTag(){
+  const name = pendingName.value.trim();
+  if(!name || !pendingPin) return;
+  const classYear = normalizeClassYear(pendingClassYear.value);
+  const ph = currentPhoto();
+  const tag = { x: pendingPin.x, y: pendingPin.y, name };
+  if(classYear) tag.classYear = classYear;
+  ph.tags.push(tag);
+  cancelPending();
+  renderPins();
+  renderTaglist();
+  render();
+}
+
+document.getElementById('lbClose').addEventListener('click', () => {
+  withViewTransition(() => lightbox.classList.remove('open'));
+});
+document.getElementById('lbDeletePhoto').addEventListener('click', () => {
+  const ev = currentEvent();
+  const ph = currentPhoto();
+  if(!ev || !ph) return;
+  if(!confirm('Remove this photo?')) return;
+  withViewTransition(() => {
+    const idx = currentLightbox.photoIndex;
+    ev.photos.splice(idx, 1);
+    if(!ev.photos.length){
+      events = events.filter(e => e.id !== ev.id);
+      lightbox.classList.remove('open');
+    } else {
+      currentLightbox.photoIndex = Math.min(idx, ev.photos.length - 1);
+      renderLightbox();
+    }
+    render();
+  });
+});
+document.getElementById('lbPrev').addEventListener('click', () => navigate(-1));
+document.getElementById('lbNext').addEventListener('click', () => navigate(1));
+function navigate(dir){
+  const ev = currentEvent();
+  if(!ev) return;
+  let idx = currentLightbox.photoIndex + dir;
+  if(idx < 0) idx = ev.photos.length - 1;
+  if(idx >= ev.photos.length) idx = 0;
+  currentLightbox.photoIndex = idx;
+  withViewTransition(() => renderLightbox());
+}
+
+document.addEventListener('keydown', (e) => {
+  if((e.key === 'Enter' || e.key === ' ') && e.target.tagName === 'LABEL' && e.target.getAttribute('role') === 'button'){
+    e.preventDefault();
+    e.target.click();
+  }
+});
+
+loadState().then(render);
+</script>
